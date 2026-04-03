@@ -10,7 +10,13 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
-connectDB();
+let cachedDb = null;
+app.use(async (req, res, next) => {
+  if (!cachedDb) {
+    cachedDb = await connectDB();
+  }
+  next();
+});
 
 // Middleware
 app.use(cors({

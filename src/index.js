@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./db/connect');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./config/swagger');
@@ -20,11 +21,13 @@ app.use(async (req, res, next) => {
 
 // Middleware
 app.use(cors({
-  origin: '*', // Allows all origins
+  origin: true, // Dynamically allow the requesting origin
+  credentials: true, // Allow cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 
 // Swagger Documentation

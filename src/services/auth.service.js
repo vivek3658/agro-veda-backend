@@ -25,12 +25,17 @@ const registerUser = async (userData) => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
+  // Use await User.create to ensure it is saved before proceeding
   const user = await User.create({
     name,
     email,
     password: hashedPassword,
     role: role || 'user'
   });
+
+  if (!user) {
+    throw new Error('Failed to create user in database');
+  }
 
   const token = generateToken(user);
   return { user: { id: user._id, name: user.name, email: user.email, role: user.role }, token };
@@ -63,17 +68,21 @@ const googleLogin = async (idToken, requestedRole) => {
   let user = await User.findOne({ email });
 
   if (!user) {
-    // Registering a new Google user
+    // Registering a new Google user - ensure await User.create
     user = await User.create({
       name,
       email,
       googleId,
-      role: requestedRole || 'user', // Allows assigning role during first google sign in
+      role: requestedRole || 'user', 
     });
   } else if (!user.googleId) {
     // Link google account to existing standard account
     user.googleId = googleId;
     await user.save();
+  }
+
+  if (!user) {
+    throw new Error('Failed to create or link Google user');
   }
 
   const token = generateToken(user);

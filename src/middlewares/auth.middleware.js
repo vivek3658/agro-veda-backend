@@ -5,10 +5,15 @@ const User = require('../models/User');
 const protect = async (req, res, next) => {
   let token;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      token = req.headers.authorization.split(' ')[1];
+  // Check for token in cookies or Authorization header
+  if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
 
+  if (token) {
+    try {
       // Decode token
       const decoded = jwt.verify(token, config.jwtSecret);
 
@@ -24,9 +29,7 @@ const protect = async (req, res, next) => {
       console.error(error);
       res.status(401).json({ message: 'Not authorized, token failed' });
     }
-  }
-
-  if (!token) {
+  } else {
     res.status(401).json({ message: 'Not authorized, no token' });
   }
 };

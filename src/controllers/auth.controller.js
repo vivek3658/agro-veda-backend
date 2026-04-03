@@ -24,9 +24,16 @@ const register = async (req, res) => {
 
     const result = await authService.registerUser({ name, email, password, role });
     setTokenCookie(res, result.token);
-    res.status(201).json(result);
+    
+    // Explicitly return flattened object
+    res.status(201).json({
+      success: true,
+      token: result.token,
+      user: result.user
+    });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Registration Error:', error.message);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -39,10 +46,19 @@ const login = async (req, res) => {
     }
 
     const result = await authService.loginUser(email, password);
+    console.log('Login successful for:', email, 'Token generated:', !!result.token);
+    
     setTokenCookie(res, result.token);
-    res.status(200).json(result);
+    
+    // Explicitly return flattened object
+    res.status(200).json({
+      success: true,
+      token: result.token,
+      user: result.user
+    });
   } catch (error) {
-    res.status(401).json({ message: error.message });
+    console.error('Login Error:', error.message);
+    res.status(401).json({ success: false, message: error.message });
   }
 };
 
@@ -56,9 +72,15 @@ const googleLogin = async (req, res) => {
 
     const result = await authService.googleLogin(idToken, role);
     setTokenCookie(res, result.token);
-    res.status(200).json(result);
+    
+    res.status(200).json({
+      success: true,
+      token: result.token,
+      user: result.user
+    });
   } catch (error) {
-    res.status(401).json({ message: error.message });
+    console.error('Google Login Error:', error.message);
+    res.status(401).json({ success: false, message: error.message });
   }
 };
 

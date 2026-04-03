@@ -57,6 +57,7 @@ const loginUser = async (email, password) => {
 };
 
 const googleLogin = async (idToken, requestedRole) => {
+  console.log('Attempting Google login...');
   // Verify the Google token
   const ticket = await client.verifyIdToken({
     idToken: idToken,
@@ -65,18 +66,21 @@ const googleLogin = async (idToken, requestedRole) => {
   const payload = ticket.getPayload();
   const { email, name, sub: googleId } = payload;
 
+  console.log('Google payload verified:', { email, name });
+
   let user = await User.findOne({ email });
 
   if (!user) {
-    // Registering a new Google user - ensure await User.create
-    user = await User.create({
+    console.log('Creating new Google user:', email);
+    user = new User({
       name,
       email,
       googleId,
       role: requestedRole || 'user', 
     });
-  } else if (!user.googleId) {
-    // Link google account to existing standard account
+    await user.save();
+  } else {
+    console.log('User found, linking/updating Google ID:', email);
     user.googleId = googleId;
     await user.save();
   }
@@ -92,5 +96,8 @@ const googleLogin = async (idToken, requestedRole) => {
 module.exports = {
   registerUser,
   loginUser,
+  googleLogin
+};
+
   googleLogin
 };

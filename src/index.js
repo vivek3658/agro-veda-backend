@@ -10,24 +10,35 @@ const swaggerSpecs = require('./config/swagger');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
-let cachedDb = null;
-app.use(async (req, res, next) => {
-  if (!cachedDb) {
-    cachedDb = await connectDB();
-  }
-  next();
-});
-
 // Middleware
 app.use(cors({
-  origin: true, // Dynamically allow the requesting origin
+  origin: function (origin, callback) {
+    // Allow all origins with credentials
+    callback(null, true);
+  },
   credentials: true, // Allow cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Connect to MongoDB
+let cachedDb = null;
+app.use(async (req, res, next) => {
+  try {
+    if (!cachedDb) {
+      cachedDb = await connectDB();
+    }
+    if (!cachedDb && mongoose.connection.readyState === 0) {
+       return res.status(503).json({ message: 'Database connection failed. Please check your configuration.' });
+    }
+    next();
+  } catch (error) {
+    console.error('Database connection middleware error:', error);
+    res.status(500).json({ message: 'Internal server error during DB connection' });
+  }
+});
 
 
 // Swagger Documentation

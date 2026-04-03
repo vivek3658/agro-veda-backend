@@ -1,5 +1,12 @@
 require('dotenv').config();
 
+console.log('Config: Loading environment variables...');
+if (!process.env.MONGODB_URI) {
+  console.warn('Config: MONGODB_URI is not set, using local fallback');
+} else {
+  console.log('Config: MONGODB_URI is set');
+}
+
 module.exports = {
   port: process.env.PORT || 5000,
   mongoUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/backend-db',

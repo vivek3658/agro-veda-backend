@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow all origins with credentials for dev, or specify your frontend URL
+    // Dynamically allow all origins with credentials
     callback(null, true);
   },
   credentials: true,
@@ -28,17 +28,13 @@ app.use(cookieParser());
 let cachedDb = null;
 app.use(async (req, res, next) => {
   try {
-    if (!cachedDb) {
+    if (!cachedDb || mongoose.connection.readyState === 0) {
       cachedDb = await connectDB();
-    }
-    // We can now use mongoose because it's required
-    if (!cachedDb && mongoose.connection.readyState === 0) {
-       return res.status(503).json({ message: 'Database connection failed.' });
     }
     next();
   } catch (error) {
     console.error('Database connection middleware error:', error);
-    res.status(500).json({ message: 'Internal server error during DB connection' });
+    res.status(503).json({ message: 'Database connection failed. Please try again later.' });
   }
 });
 

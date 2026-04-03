@@ -25,7 +25,7 @@ const registerUser = async (userData) => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  console.log('Attempting to create user:', email);
+  console.log('Registering user:', email);
 
   const user = new User({
     name,
@@ -37,11 +37,14 @@ const registerUser = async (userData) => {
   const savedUser = await user.save();
 
   if (!savedUser) {
-    throw new Error('Failed to save user in database');
+    throw new Error('Database save failed');
   }
 
   const token = generateToken(savedUser);
-  return { user: { id: savedUser._id, name: savedUser.name, email: savedUser.email, role: savedUser.role }, token };
+  return { 
+    user: { id: savedUser._id, name: savedUser.name, email: savedUser.email, role: savedUser.role }, 
+    token 
+  };
 };
 
 const loginUser = async (email, password) => {
@@ -56,11 +59,14 @@ const loginUser = async (email, password) => {
   }
 
   const token = generateToken(user);
-  return { user: { id: user._id, name: user.name, email: user.email, role: user.role }, token };
+  return { 
+    user: { id: user._id, name: user.name, email: user.email, role: user.role }, 
+    token 
+  };
 };
 
 const googleLogin = async (idToken, requestedRole) => {
-  console.log('Attempting Google login...');
+  console.log('Google login attempt...');
   const ticket = await client.verifyIdToken({
     idToken: idToken,
     audience: config.googleClientId, 
@@ -71,7 +77,7 @@ const googleLogin = async (idToken, requestedRole) => {
   let user = await User.findOne({ email });
 
   if (!user) {
-    console.log('Creating new Google user:', email);
+    console.log('New Google user:', email);
     user = new User({
       name,
       email,
@@ -79,14 +85,17 @@ const googleLogin = async (idToken, requestedRole) => {
       role: requestedRole || 'user', 
     });
     await user.save();
-  } else if (!user.googleId) {
-    console.log('Linking Google ID to existing user:', email);
+  } else {
+    console.log('Existing user Google link:', email);
     user.googleId = googleId;
     await user.save();
   }
 
   const token = generateToken(user);
-  return { user: { id: user._id, name: user.name, email: user.email, role: user.role }, token };
+  return { 
+    user: { id: user._id, name: user.name, email: user.email, role: user.role }, 
+    token 
+  };
 };
 
 module.exports = {

@@ -25,20 +25,23 @@ const registerUser = async (userData) => {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  // Use await User.create to ensure it is saved before proceeding
-  const user = await User.create({
+  console.log('Attempting to create user:', email);
+
+  const user = new User({
     name,
     email,
     password: hashedPassword,
     role: role || 'user'
   });
 
-  if (!user) {
-    throw new Error('Failed to create user in database');
+  const savedUser = await user.save();
+
+  if (!savedUser) {
+    throw new Error('Failed to save user in database');
   }
 
-  const token = generateToken(user);
-  return { user: { id: user._id, name: user.name, email: user.email, role: user.role }, token };
+  const token = generateToken(savedUser);
+  return { user: { id: savedUser._id, name: savedUser.name, email: savedUser.email, role: savedUser.role }, token };
 };
 
 const loginUser = async (email, password) => {
@@ -58,15 +61,12 @@ const loginUser = async (email, password) => {
 
 const googleLogin = async (idToken, requestedRole) => {
   console.log('Attempting Google login...');
-  // Verify the Google token
   const ticket = await client.verifyIdToken({
     idToken: idToken,
     audience: config.googleClientId, 
   });
   const payload = ticket.getPayload();
   const { email, name, sub: googleId } = payload;
-
-  console.log('Google payload verified:', { email, name });
 
   let user = await User.findOne({ email });
 
@@ -79,14 +79,10 @@ const googleLogin = async (idToken, requestedRole) => {
       role: requestedRole || 'user', 
     });
     await user.save();
-  } else {
-    console.log('User found, linking/updating Google ID:', email);
+  } else if (!user.googleId) {
+    console.log('Linking Google ID to existing user:', email);
     user.googleId = googleId;
     await user.save();
-  }
-
-  if (!user) {
-    throw new Error('Failed to create or link Google user');
   }
 
   const token = generateToken(user);
@@ -96,8 +92,5 @@ const googleLogin = async (idToken, requestedRole) => {
 module.exports = {
   registerUser,
   loginUser,
-  googleLogin
-};
-
   googleLogin
 };

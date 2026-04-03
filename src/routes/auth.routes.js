@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, googleLogin, getMe } = require('../controllers/auth.controller');
+const { register, login, googleLogin, getMe, logout } = require('../controllers/auth.controller');
 const { protect } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
@@ -88,5 +88,17 @@ router.post('/google', googleLogin);
  *         description: User profile data
  */
 router.get('/me', protect, getMe);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ */
+router.post('/logout', logout);
 
 module.exports = router;

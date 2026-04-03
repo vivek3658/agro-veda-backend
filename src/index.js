@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const mongoose = require('mongoose');
 const connectDB = require('./db/connect');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./config/swagger');
@@ -13,10 +14,10 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow all origins with credentials
+    // Allow all origins with credentials for dev, or specify your frontend URL
     callback(null, true);
   },
-  credentials: true, // Allow cookies
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
@@ -30,8 +31,9 @@ app.use(async (req, res, next) => {
     if (!cachedDb) {
       cachedDb = await connectDB();
     }
+    // We can now use mongoose because it's required
     if (!cachedDb && mongoose.connection.readyState === 0) {
-       return res.status(503).json({ message: 'Database connection failed. Please check your configuration.' });
+       return res.status(503).json({ message: 'Database connection failed.' });
     }
     next();
   } catch (error) {

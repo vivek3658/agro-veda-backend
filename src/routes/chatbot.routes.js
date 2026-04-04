@@ -15,8 +15,11 @@ const {
 
 const router = express.Router();
 
-const uploadDir = path.join(process.cwd(), 'tmp', 'chatbot-uploads');
-fs.mkdirSync(uploadDir, { recursive: true });
+const os = require('os');
+const uploadDir = path.join(os.tmpdir(), 'chatbot-uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),

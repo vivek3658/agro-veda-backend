@@ -3,12 +3,15 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
   name: { 
     type: String, 
-    required: true 
+    required: true,
+    trim: true
   },
   email: { 
     type: String, 
     required: true, 
-    unique: true 
+    unique: true,
+    lowercase: true,
+    trim: true
   },
   password: { 
     type: String,
@@ -16,12 +19,26 @@ const userSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    enum: ['user', 'admin', 'farmer', 'consumer'], // roles updated
-    default: 'user' 
+    enum: ['farmer', 'consumer'],
+    default: 'consumer' 
   },
   googleId: { 
     type: String 
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'suspended'],
+    default: 'active'
+  },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  lastLoginAt: {
+    type: Date
   }
 }, { timestamps: true });
+
+userSchema.index({ role: 1, status: 1 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -4,7 +4,6 @@ const config = require('../config');
 const connectDB = async () => {
   try {
     if (mongoose.connection.readyState >= 1) {
-      console.log('Using existing MongoDB connection');
       return mongoose.connection;
     }
     

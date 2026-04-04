@@ -4,9 +4,11 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const connectDB = require('./db/connect');
+const seedAdmin = require('./db/seed-admin');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./config/swagger');
-
+const { startFarmerDailyEmailJob } = require('./jobs/farmer-daily-email.job');
+const { notFoundHandler, errorHandler } = require('./middlewares/error.middleware');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -45,6 +47,14 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 // Routes
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/crops', require('./routes/crop.routes'));
+app.use('/api/profile', require('./routes/profile.routes'));
+app.use('/api/marketplace', require('./routes/marketplace.routes'));
+app.use('/api/orders', require('./routes/order.routes'));
+app.use('/api/reviews', require('./routes/review.routes'));
+app.use('/api/analytics', require('./routes/analytics.routes'));
+app.use('/api/admin', require('./routes/admin-auth.routes'));
+app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/services', require('./routes/service.routes'));
 
 app.get('/', (req, res) => {
   res.send('Backend is running!');
@@ -55,10 +65,23 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', uptime: process.uptime() });
 });
 
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
+  (async () => {
+    try {
+      await connectDB();
+      await seedAdmin();
+      startFarmerDailyEmailJob();
+      app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error('Startup failed:', error);
+      process.exit(1);
+    }
+  })();
 }
 
 module.exports = app;

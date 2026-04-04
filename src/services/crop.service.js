@@ -1,7 +1,10 @@
 const Crop = require('../models/Crop');
+const { syncListingFromCrop, removeListingForCrop } = require('./listing-sync.service');
 
 const createCrop = async (farmerId, cropData) => {
-  return await Crop.create({ ...cropData, farmer: farmerId });
+  const crop = await Crop.create({ ...cropData, farmer: farmerId });
+  await syncListingFromCrop(crop);
+  return crop;
 };
 
 const getAllCrops = async (filters = {}) => {
@@ -63,31 +66,59 @@ const updateCrop = async (farmerId, cropId, updateData) => {
   const crop = await Crop.findById(cropId);
   if (!crop) throw new Error('Crop not found');
 
-  // Check if crop belongs to the farmer
+  // Check authorization
   if (crop.farmer.toString() !== farmerId.toString()) {
     throw new Error('You are not authorized to update this crop');
   }
 
   Object.assign(crop, updateData);
-  await crop.save();
-  return crop;
+  const updatedCrop = await crop.save();
+  await syncListingFromCrop(updatedCrop);
+  return updatedCrop;
 };
 
 const deleteCrop = async (farmerId, cropId) => {
   const crop = await Crop.findById(cropId);
   if (!crop) throw new Error('Crop not found');
 
-  // Check if crop belongs to the farmer
+  // Check authorization
   if (crop.farmer.toString() !== farmerId.toString()) {
     throw new Error('You are not authorized to delete this crop');
   }
 
+  await removeListingForCrop(crop._id);
   await crop.deleteOne();
-  return { message: 'Crop removed successfully' };
+  return { success: true };
 };
 
-const getFarmerCrops = async (farmerId) => {
-  return await Crop.find({ farmer: farmerId });
+const getFarmerCrops = async (farmerId, filters = {}) => {
+  const { page = 1, limit = 10, sortBy, order } = filters;
+
+  let sort = {};
+  if (sortBy) {
+    sort[sortBy] = order === 'desc' ? -1 : 1;
+  } else {
+    sort.createdAt = -1; // Newest first by default
+  }
+
+  const skip = (page - 1) * limit;
+
+  const crops = await Crop.find({ farmer: farmerId })
+    .sort(sort)
+    .skip(skip)
+    .limit(limit);
+
+  const total = await Crop.countDocuments({ farmer: farmerId });
+
+  return {
+    crops,
+    pagination: {
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      pages: Math.ceil(total / limit)
+    }
+  };
 };
 
 module.exports = {

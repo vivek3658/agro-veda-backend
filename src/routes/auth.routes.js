@@ -22,7 +22,7 @@ const router = express.Router();
  *               email: { type: string }
  *               password: { type: string }
  *               reEnterPassword: { type: string }
- *               role: { type: string, enum: [user, admin, farmer, consumer] }
+ *               role: { type: string, enum: [farmer, consumer] }
  *               captcha: { type: string }
  *     responses:
  *       201:

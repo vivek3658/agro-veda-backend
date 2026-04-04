@@ -1,56 +1,57 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const config = require('../config');
+const { signUserToken } = require('../utils/jwt');
 
 const client = new OAuth2Client(config.googleClientId);
 
-const generateToken = (user) => {
-  return jwt.sign(
-    { id: user._id, role: user.role, email: user.email },
-    config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn }
-  );
+const normalizeRole = (role) => {
+  return role === 'farmer' ? 'farmer' : 'consumer';
 };
 
 const registerUser = async (userData) => {
   const { name, email, password, role } = userData;
 
+  // Check if user exists
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new Error('User already exists');
   }
 
+  // Hash password and create user
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  console.log('Registering user:', email);
-
   const user = new User({
     name,
-    email,
+    email: String(email).toLowerCase(),
     password: hashedPassword,
-    role: role || 'user'
+    role: normalizeRole(role)
   });
 
   const savedUser = await user.save();
-
-  if (!savedUser) {
-    throw new Error('Database save failed');
-  }
-
-  const token = generateToken(savedUser);
+  const token = signUserToken(savedUser);
+  
   return { 
-    user: { id: savedUser._id, name: savedUser.name, email: savedUser.email, role: savedUser.role }, 
+    user: { 
+      id: savedUser._id, 
+      name: savedUser.name, 
+      email: savedUser.email, 
+      role: savedUser.role 
+    }, 
     token 
   };
 };
 
 const loginUser = async (email, password) => {
-  const user = await User.findOne({ email });
+  // Find user and verify password
+  const user = await User.findOne({ email: String(email).toLowerCase() });
   if (!user || !user.password) {
     throw new Error('Invalid email or password');
+  }
+  if (user.status !== 'active') {
+    throw new Error('Account is not active');
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
@@ -58,15 +59,22 @@ const loginUser = async (email, password) => {
     throw new Error('Invalid email or password');
   }
 
-  const token = generateToken(user);
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  const token = signUserToken(user);
   return { 
-    user: { id: user._id, name: user.name, email: user.email, role: user.role }, 
+    user: { 
+      id: user._id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role 
+    }, 
     token 
   };
 };
 
 const googleLogin = async (idToken, requestedRole) => {
-  console.log('Google login attempt...');
   const ticket = await client.verifyIdToken({
     idToken: idToken,
     audience: config.googleClientId, 
@@ -74,26 +82,34 @@ const googleLogin = async (idToken, requestedRole) => {
   const payload = ticket.getPayload();
   const { email, name, sub: googleId } = payload;
 
-  let user = await User.findOne({ email });
+  let user = await User.findOne({ email: String(email).toLowerCase() });
 
   if (!user) {
-    console.log('New Google user:', email);
+    // Create new user
     user = new User({
       name,
-      email,
+      email: String(email).toLowerCase(),
       googleId,
-      role: requestedRole || 'user', 
+      role: normalizeRole(requestedRole), 
+      isEmailVerified: true
     });
     await user.save();
   } else {
-    console.log('Existing user Google link:', email);
+    // Link Google ID to existing user
     user.googleId = googleId;
+    user.isEmailVerified = true;
+    user.lastLoginAt = new Date();
     await user.save();
   }
 
-  const token = generateToken(user);
+  const token = signUserToken(user);
   return { 
-    user: { id: user._id, name: user.name, email: user.email, role: user.role }, 
+    user: { 
+      id: user._id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role 
+    }, 
     token 
   };
 };

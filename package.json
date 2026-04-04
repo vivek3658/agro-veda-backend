@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "seed:admin": "node src/db/seed-admin.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -21,6 +22,8 @@
     "google-auth-library": "^10.6.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.3.3",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^7.0.5",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },

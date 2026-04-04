@@ -94,7 +94,7 @@ router.get('/:id', getCropById);
  *       201:
  *         description: Crop created successfully
  */
-router.post('/', protect, authorize('farmer', 'admin'), createCrop);
+router.post('/', protect, authorize('farmer'), createCrop);
 
 /**
  * @swagger
@@ -104,11 +104,24 @@ router.post('/', protect, authorize('farmer', 'admin'), createCrop);
  *     tags: [Crops]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 10 }
+ *       - in: query
+ *         name: sortBy
+ *         schema: { type: string }
+ *       - in: query
+ *         name: order
+ *         schema: { type: string, enum: [asc, desc] }
  *     responses:
  *       200:
- *         description: List of farmer's crops
+ *         description: List of farmer's crops with pagination
  */
-router.get('/my/all', protect, authorize('farmer', 'admin'), getMyCrops);
+router.get('/my/all', protect, authorize('farmer'), getMyCrops);
 
 /**
  * @swagger
@@ -137,7 +150,7 @@ router.get('/my/all', protect, authorize('farmer', 'admin'), getMyCrops);
  *       200:
  *         description: Crop updated successfully
  */
-router.put('/:id', protect, authorize('farmer', 'admin'), updateCrop);
+router.put('/:id', protect, authorize('farmer'), updateCrop);
 
 /**
  * @swagger
@@ -156,6 +169,6 @@ router.put('/:id', protect, authorize('farmer', 'admin'), updateCrop);
  *       200:
  *         description: Crop deleted successfully
  */
-router.delete('/:id', protect, authorize('farmer', 'admin'), deleteCrop);
+router.delete('/:id', protect, authorize('farmer'), deleteCrop);
 
 module.exports = router;

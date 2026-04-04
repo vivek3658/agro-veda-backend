@@ -24,5 +24,6 @@ module.exports = {
   smtpPass: process.env.SMTP_PASS || '',
   emailFrom: process.env.EMAIL_FROM || 'AgroVeda <noreply@agroveda.com>',
   dailyFarmerEmailCron: process.env.CRON_TIME_DAILY_FARMER_EMAIL || '0 7 * * *',
-  cronTimezone: process.env.CRON_TIMEZONE || 'Asia/Kolkata'
+  cronTimezone: process.env.CRON_TIMEZONE || 'Asia/Kolkata',
+  tesseractCmd: process.env.TESSERACT_CMD || ''
 };

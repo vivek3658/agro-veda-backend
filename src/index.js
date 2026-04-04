@@ -55,6 +55,8 @@ app.use('/api/analytics', require('./routes/analytics.routes'));
 app.use('/api/admin', require('./routes/admin-auth.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/services', require('./routes/service.routes'));
+app.use('/api/soil-chatbot', require('./routes/soil-chatbot.routes'));
+app.use('/api/chatbot', require('./routes/chatbot.routes'));
 
 app.get('/', (req, res) => {
   res.send('Backend is running!');

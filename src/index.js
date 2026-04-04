@@ -76,9 +76,9 @@ if (process.env.NODE_ENV !== 'production') {
       await connectDB();
       await seedAdmin();
       startFarmerDailyEmailJob();
-      app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-      });
+      // app.listen(PORT, () => {
+      //   console.log(`Server is running on port ${PORT}`);
+      // });
     } catch (error) {
       console.error('Startup failed:', error);
       process.exit(1);
